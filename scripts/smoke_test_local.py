@@ -307,7 +307,7 @@ def run_smoke_tests(verbose: bool = False) -> int:
         print(f"\n{INFO} 9. GET /api/samples (manifest check)")
         r = client.get("/api/samples")
         if r.status_code == 404:
-            print(f"{WARN} /api/samples returned 404 (sample/manifest.json not present – acceptable in CI)")
+            print(f"{WARN} /api/samples returned 404 (sample/manifest.json not present - acceptable in CI)")
         else:
             check(
                 "GET /api/samples returns 200",
