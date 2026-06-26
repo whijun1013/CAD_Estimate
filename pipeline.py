@@ -368,7 +368,7 @@ class StubVisionAnalyzer(BaseVisionAnalyzer):
         vision_data = []
         if "도면 샘플" in task.file_name or "도면_샘플" in task.file_name or "sample_drawing" in task.file_name.lower():
             # Load from expected vision fixture
-            fixture_path = os.path.join("tests", "fixtures", "vision", "sample_drawing_expected.json")
+            fixture_path = os.path.join("tests", "fixtures", "vision", "synthetic_drawing_expected.json")
             if os.path.exists(fixture_path):
                 try:
                     with open(fixture_path, "r", encoding="utf-8") as f:
@@ -380,7 +380,7 @@ class StubVisionAnalyzer(BaseVisionAnalyzer):
                         {"bounding_box": "400,400,800,800", "label": f"notes:{','.join(expected['notes'])}", "confidence": 0.99}
                     ]
                 except Exception as e:
-                    logging.error("Failed to load sample_drawing_expected.json fixture in StubVisionAnalyzer: %s", e)
+                    logging.error("Failed to load synthetic_drawing_expected.json fixture in StubVisionAnalyzer: %s", e)
                     vision_data = [{"bounding_box": "100,100,500,500", "label": "title:가전 미선택 시", "confidence": 0.99}]
             else:
                 vision_data = [

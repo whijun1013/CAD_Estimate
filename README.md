@@ -207,7 +207,7 @@ npm run build
 
 * `tests/fixtures/synthetic_kitchen.dxf`
 * `tests/fixtures/synthetic_shoe.dxf`
-* `tests/fixtures/golden/po_synthetic_sample.json`
+* `tests/fixtures/golden/po_synthetic_fixture.json`
 
 ### 2) XLSX 발주서 파싱 및 DB 임포트
 
@@ -235,7 +235,7 @@ AI가 산출한 수량/품목 JSON 결과와 synthetic fixture 간의 오차 및
 
 ```bash
 python scripts/evaluate_analysis.py \
-  --expected tests/fixtures/golden/po_synthetic_sample.json \
+  --expected tests/fixtures/golden/po_synthetic_fixture.json \
   --actual local_private/po_synthetic_actual.json \
   --apartment-type 84A \
   --dimension-tolerance-mm 10

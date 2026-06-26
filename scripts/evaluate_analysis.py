@@ -384,7 +384,7 @@ def print_console_summary(report):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Evaluate AI analysis result against expected golden dataset.")
-    parser.add_argument("--expected", default="tests/fixtures/golden/po_synthetic_sample.json", help="Path to golden dataset JSON.")
+    parser.add_argument("--expected", default="tests/fixtures/golden/po_synthetic_fixture.json", help="Path to golden dataset JSON.")
     parser.add_argument("--actual", required=True, help="Path to actual analysis result JSON.")
     parser.add_argument("--apartment-type", default=None, help="Filter evaluation by apartment type (e.g. 84A).")
     parser.add_argument("--dimension-tolerance-mm", type=int, default=10, help="Dimension matching tolerance in mm.")
