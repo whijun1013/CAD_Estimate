@@ -1,0 +1,66 @@
+{
+  "project": {
+    "po_number": "SYNTHETIC-PO-001",
+    "contract_number": "SYN-CON-001",
+    "name": "Synthetic Fixture Site",
+    "client": "Synthetic Client",
+    "partner_installer": "Synthetic Installer",
+    "item_type": "kitchen_furniture",
+    "address": "Synthetic Address",
+    "manager_name": "Fixture Manager",
+    "manager_contact": "000-0000-0000",
+    "installer_name": "Fixture Installer",
+    "installer_contact": "000-0000-0001",
+    "first_delivery_date": null,
+    "opening_date": null,
+    "site_type": "APT",
+    "max_floor": 10,
+    "is_divided_work": false
+  },
+  "po_number": "SYNTHETIC-PO-001",
+  "apartment_types": [
+    "84A",
+    "101A"
+  ],
+  "items": [
+    {
+      "apartment_type": "84A",
+      "category": "upper_cabinet",
+      "item_no": 1,
+      "product_name": "Synthetic Upper Cabinet",
+      "product_code": "SYN-UC-001",
+      "attribute_code": "SYN-800-700-320",
+      "width": 800,
+      "height": 700,
+      "depth": 320,
+      "qty": 10,
+      "is_special": false,
+      "remarks": "Synthetic fixture row",
+      "evidence": [
+        "synthetic_fixture:true"
+      ]
+    },
+    {
+      "apartment_type": "101A",
+      "category": "panel",
+      "item_no": 2,
+      "product_name": "Synthetic Side Panel",
+      "product_code": "SYN-PN-002",
+      "attribute_code": "SYN-300-2200-18",
+      "width": 300,
+      "height": 2200,
+      "depth": 18,
+      "qty": 8,
+      "is_special": true,
+      "remarks": "Synthetic fixture row",
+      "evidence": [
+        "synthetic_fixture:true"
+      ]
+    }
+  ],
+  "totals": {
+    "total_apartment_types": 2,
+    "total_items_count": 2,
+    "total_quantity": 18
+  }
+}

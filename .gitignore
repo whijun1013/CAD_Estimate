@@ -1,0 +1,60 @@
+# Environment Settings
+.env
+.env.*
+!.env.example
+
+# Databases
+construction_orders.db
+*.db
+*.sqlite
+*.sqlite3
+
+# Uploaded items and generated artifacts
+uploads/
+tmp/
+temp/
+scratch/
+local_private/
+sample/
+*tmp_dummy_file*
+task_*_pipeline_artifact.json
+task_*_raw_entities.json
+
+# Node packages
+node_modules/
+frontend/node_modules/
+
+# Dist / build outputs
+dist/
+frontend/dist/
+
+# Python / IDE cache files
+__pycache__/
+.pytest_cache/
+.pytest_tmp*
+.pytest_run_tmp*/
+.pytest_final_tmp/
+.pytest_*/
+golden_tmp*.json
+golden*_tmp.json
+.ipynb_checkpoints/
+*.pyc
+*.pyo
+*.pyd
+.vscode/
+.idea/
+
+# Local logs
+*.log
+
+# DWG drawings: heavy customer assets, keep in secure local storage only
+*.dwg
+
+# Sensitive local sample workbooks and derived fixtures
+*.xlsx
+*.xls
+*.xlsm
+tests/fixtures/golden/po_262512001101.json
+tests/fixtures/golden/po_262508001001.json
+tests/fixtures/golden/*_actual.json
+tests/fixtures/golden/private_*.json
