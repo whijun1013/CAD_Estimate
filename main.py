@@ -95,8 +95,9 @@ ALLOWED_EXTENSIONS = {"dwg", "dxf", "pdf", "png", "jpg", "jpeg"}
 MAX_UPLOAD_SIZE = int(os.getenv("MAX_UPLOAD_SIZE", "52428800")) # 50MB
 
 def secure_filename(filename: str) -> str:
+    filename = filename.replace("\\", "/")
     filename = os.path.basename(filename)
-    filename = re.sub(r'[^a-zA-Z0-9가-힣\s_\-\.]', '', filename)
+    filename = re.sub(r'[^\w\s\-\.]', '', filename, flags=re.UNICODE)
     filename = filename.strip()
     if not filename or filename in ('.', '..'):
         filename = "uploaded_file"
