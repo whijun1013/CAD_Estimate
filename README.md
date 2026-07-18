@@ -77,6 +77,18 @@ ANTHROPIC_MODEL=claude-3-5-sonnet-20241022
 QWEN_LOCAL_ENDPOINT=http://localhost:11434/v1
 ```
 
+실서비스 배포 시에는 `.env`를 업로드하거나 커밋하지 말고, 배포 플랫폼의 Secret/환경변수 설정에 아래 값을 등록한 뒤 서비스를 재배포합니다.
+
+```env
+OPENAI_API_KEY=발급받은_비밀키
+OPENAI_MODEL=gpt-5.6
+VISION_ANALYZER_PROVIDER=openai
+AI_REVIEW_PROVIDER=openai
+ALLOW_MOCK_PROVIDER=false
+```
+
+설정 화면의 API 키 입력은 로컬 확인용이며 현재 백엔드 프로세스에만 적용됩니다. 운영 환경에서는 서버 환경변수를 사용해야 재시작 후에도 연결이 유지됩니다.
+
 ---
 
 ## 4-1. 무료 로컬 처리와 비용 발생 가능 항목

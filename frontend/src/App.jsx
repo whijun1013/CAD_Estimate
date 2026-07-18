@@ -29,6 +29,7 @@ import {
 } from 'lucide-react';
 import { apiClient } from './apiClient';
 import AIStatusBar from './components/AIStatusBar';
+import DeveloperToolsPage from './components/DeveloperToolsPage';
 import WorkflowSidebar from './components/WorkflowSidebar';
 
 const DistributionChart = lazy(() => import('./components/DistributionChart'));
@@ -3424,284 +3425,26 @@ function App() {
           {/* ======================================================== */}
           {currentPage === 'developer-tools' && (
             <div className="tab-content" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-              <div className="glass-card diagnostics-card">
-                <h2 className="card-title">
-                  <Cpu size={16} /> AI 파이프라인 분석 엔진 프로바이더 상태
-                </h2>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', fontSize: '0.85rem' }}>
-                  <p style={{ margin: 0, color: 'var(--text-muted)' }}>
-                    백엔드에서 도면을 분석할 때 사용할 AI 모델 및 파이프라인 엔진 설정 정보입니다. (서버 .env에서 변경 가능)
-                  </p>
-                  {healthData && healthData.provider_mode ? (
-                    <div style={{
-                      display: 'grid',
-                      gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-                      gap: '1rem',
-                      background: 'rgba(0,0,0,0.2)',
-                      padding: '1rem',
-                      borderRadius: '8px',
-                      border: '1px solid var(--border-color)',
-                      marginTop: '0.5rem'
-                    }}>
-                      <div>
-                        <span style={{ display: 'block', color: 'var(--text-muted)', fontSize: '0.75rem', marginBottom: '0.2rem' }}>도면 변환 모듈 (Drawing Converter)</span>
-                        <span style={{ fontWeight: 600, color: 'var(--text-bright)' }}>{healthData.provider_mode.drawing_converter}</span>
-                      </div>
-                      <div>
-                        <span style={{ display: 'block', color: 'var(--text-muted)', fontSize: '0.75rem', marginBottom: '0.2rem' }}>벡터 추출 모듈 (Vector Extractor)</span>
-                        <span style={{ fontWeight: 600, color: 'var(--text-bright)' }}>{healthData.provider_mode.vector_extractor}</span>
-                      </div>
-                      <div>
-                        <span style={{ display: 'block', color: 'var(--text-muted)', fontSize: '0.75rem', marginBottom: '0.2rem' }}>비전 분석 모델 (Vision Analyzer)</span>
-                        <span style={{ fontWeight: 600, color: 'var(--text-bright)' }}>{healthData.provider_mode.vision_analyzer}</span>
-                      </div>
-                      <div>
-                        <span style={{ display: 'block', color: 'var(--text-muted)', fontSize: '0.75rem', marginBottom: '0.2rem' }}>모의 분석 허용 여부 (Allow Mock Provider)</span>
-                        <span style={{
-                          fontWeight: 600,
-                          color: healthData.provider_mode.allow_mock_provider === 'true' ? '#fbbf24' : '#10b981'
-                        }}>{healthData.provider_mode.allow_mock_provider}</span>
-                      </div>
-                    </div>
-                  ) : (
-                    <p style={{ margin: 0, color: '#f87171' }}>서버의 헬스체크 데이터를 로드하지 못했습니다.</p>
-                  )}
-                </div>
-              </div>
+              <DeveloperToolsPage
+                healthData={healthData}
+                config={config}
+                appApiKey={appApiKey}
+                onAppApiKeyChange={handleApiKeyChange}
+                openAiKeyInput={openAiKeyInput}
+                onOpenAiKeyInputChange={setOpenAiKeyInput}
+                savingOpenAiKey={savingOpenAiKey}
+                onSaveOpenAiKey={handleSaveOpenAiKey}
+                samples={samplesList}
+                importingPo={importingPo}
+                evaluating={evaluating}
+                importResult={importResult}
+                evaluationResult={evaluationResult}
+                onLoadSamples={loadSamples}
+                onImportPo={handleImportPo}
+                onEvaluateGolden={handleEvaluateGolden}
+              />
 
-              <div className="glass-card access-key-card">
-                <h2 className="card-title">
-                  <Sliders size={16} /> 앱 접근 보안 키
-                </h2>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '0.5rem 1rem' }}>
-                  <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 600 }}>API KEY:</span>
-                  {appApiKey ? (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                      <span style={{ fontSize: '0.85rem', color: '#10b981', fontWeight: 600 }}>● 설정됨 (Masked)</span>
-                      <button
-                        onClick={() => handleApiKeyChange('')}
-                        style={{
-                          background: 'rgba(239, 68, 68, 0.1)',
-                          border: '1px solid rgba(239, 68, 68, 0.2)',
-                          color: '#f87171',
-                          fontSize: '0.75rem',
-                          padding: '0.2rem 0.5rem',
-                          borderRadius: '4px',
-                          cursor: 'pointer'
-                        }}
-                      >
-                        지우기
-                      </button>
-                    </div>
-                  ) : (
-                    <input
-                      type="password"
-                      placeholder="API Key 입력 (선택)"
-                      value={appApiKey}
-                      onChange={(e) => handleApiKeyChange(e.target.value)}
-                      style={{
-                        background: 'transparent',
-                        border: 'none',
-                        color: 'var(--text-bright)',
-                        fontSize: '0.85rem',
-                        outline: 'none',
-                        width: '200px',
-                        padding: 0,
-                        margin: 0
-                      }}
-                    />
-                  )}
-                </div>
-              </div>
-              <div className="glass-card ai-connection-card">
-                <h2 className="card-title">
-                  <Cpu size={16} /> OpenAI 연결
-                </h2>
 
-                <div style={{ marginBottom: '1rem', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '0.5rem' }}>
-                  <div style={{ background: 'rgba(255,255,255,0.02)', padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--border-color)', fontSize: '0.75rem' }}>
-                    <span style={{ color: 'var(--text-muted)', display: 'block', marginBottom: '0.2rem' }}>현재 Provider</span>
-                    <strong style={{ color: config?.provider === 'openai' ? '#10b981' : 'var(--text-bright)' }}>{config?.provider || '알 수 없음'}</strong>
-                  </div>
-                  <div style={{ background: 'rgba(255,255,255,0.02)', padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--border-color)', fontSize: '0.75rem' }}>
-                    <span style={{ color: 'var(--text-muted)', display: 'block', marginBottom: '0.2rem' }}>OpenAI 키 설정</span>
-                    <strong style={{ color: config?.openai_configured ? '#10b981' : '#f87171' }}>{config?.openai_configured ? '설정됨' : '미설정'}</strong>
-                  </div>
-                  <div style={{ background: 'rgba(255,255,255,0.02)', padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--border-color)', fontSize: '0.75rem' }}>
-                    <span style={{ color: 'var(--text-muted)', display: 'block', marginBottom: '0.2rem' }}>AI 검수(Review) 활성화</span>
-                    <strong style={{ color: config?.real_ai_review_enabled ? '#10b981' : '#fbbf24' }}>{config?.real_ai_review_enabled ? '활성 (OpenAI)' : '비활성 (Stub)'}</strong>
-                  </div>
-                  <div style={{ background: 'rgba(56,189,248,0.05)', padding: '0.5rem', borderRadius: '4px', border: '1px solid rgba(56,189,248,0.2)', fontSize: '0.75rem' }}>
-                    <span style={{ color: '#38bdf8', display: 'block', marginBottom: '0.2rem', fontWeight: 600 }}>분석 모델</span>
-                    <span style={{ color: 'var(--text-bright)' }}>{config?.model || 'gpt-5.6'}</span>
-                  </div>
-                </div>
-
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '0.5rem 1rem' }}>
-                  <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 600 }}>OPENAI_API_KEY:</span>
-                  {config?.openai_configured ? (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                      <span style={{ fontSize: '0.85rem', color: '#10b981', fontWeight: 600 }}>● 설정됨 (Runtime / .env)</span>
-                    </div>
-                  ) : (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', width: '100%' }}>
-                      <input
-                        type="password"
-                        placeholder="sk-..."
-                        value={openAiKeyInput}
-                        onChange={(e) => setOpenAiKeyInput(e.target.value)}
-                        style={{
-                          background: 'rgba(0,0,0,0.2)',
-                          border: '1px solid rgba(255,255,255,0.1)',
-                          color: 'var(--text-bright)',
-                          fontSize: '0.85rem',
-                          outline: 'none',
-                          flex: 1,
-                          padding: '0.4rem 0.5rem',
-                          borderRadius: '4px'
-                        }}
-                      />
-                      <button
-                        onClick={handleSaveOpenAiKey}
-                        disabled={savingOpenAiKey || !openAiKeyInput.trim()}
-                        style={{
-                          background: 'var(--accent-primary)',
-                          border: 'none',
-                          color: '#fff',
-                          fontSize: '0.75rem',
-                          padding: '0.4rem 0.8rem',
-                          borderRadius: '4px',
-                          cursor: (savingOpenAiKey || !openAiKeyInput.trim()) ? 'not-allowed' : 'pointer',
-                          opacity: (savingOpenAiKey || !openAiKeyInput.trim()) ? 0.5 : 1
-                        }}
-                      >
-                        {savingOpenAiKey ? '저장 중...' : 'API 키 저장 및 활성화'}
-                      </button>
-                    </div>
-                  )}
-                </div>
-                <div style={{ marginTop: '0.5rem', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                  현재 세션 런타임에만 저장되며, 브라우저나 DB에 평문으로 기록되지 않습니다. 영구적인 적용을 원하시면 <code>.env</code> 파일에 설정해주세요.
-                </div>
-              </div>
-
-              <div className="glass-card">
-                <h2 className="card-title">
-                  <Sliders size={16} /> 샘플 목록 동기화 및 PO 임포트
-                </h2>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', fontSize: '0.85rem' }}>
-                  <p style={{ margin: 0, color: 'var(--text-muted)' }}>
-                    sample 폴더의 실제 도면/발주서(xlsx) 목록을 로드하고 DB에 검증 데이터를 동기화합니다.
-                  </p>
-
-                  <button
-                    className="tab-btn active"
-                    onClick={loadSamples}
-                    style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem', alignSelf: 'start', cursor: 'pointer' }}
-                  >
-                    샘플 목록 로드
-                  </button>
-
-                  {samplesList.length > 0 && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', background: 'rgba(0,0,0,0.2)', padding: '0.75rem', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
-                      <span style={{ fontWeight: 600, color: 'var(--text-bright)' }}>샘플 목록 ({samplesList.length}):</span>
-                      {samplesList.map(s => (
-                        <div key={s.id} style={{ display: 'flex', flexDirection: 'column', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '0.5rem', paddingTop: '0.5rem' }}>
-                          <span style={{ fontWeight: 500, color: 'var(--text-bright)', fontSize: '0.82rem' }}>{s.file_name.split('/').pop()}</span>
-                          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.1rem' }}>설명: {s.notes}</span>
-
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.25rem' }}>
-                            <span style={{
-                              fontSize: '0.7rem',
-                              padding: '0.1rem 0.35rem',
-                              borderRadius: '3px',
-                              fontWeight: 600,
-                              background: s.exists ? 'rgba(16, 185, 129, 0.12)' : 'rgba(245, 158, 11, 0.12)',
-                              color: s.exists ? '#34d399' : '#fbbf24',
-                              border: s.exists ? '1px solid rgba(16, 185, 129, 0.25)' : '1px solid rgba(245, 158, 11, 0.25)'
-                            }}>
-                              {s.exists ? `보유 ${s.file_size_mb ? `(${s.file_size_mb}MB)` : ''}` : (s.file_type === 'dwg' ? '보안 미보유 (Git 제외)' : '파일 없음')}
-                            </span>
-                            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>용도: {s.intended_use}</span>
-                          </div>
-
-                          <div style={{ display: 'flex', gap: '0.4rem', marginTop: '0.4rem' }}>
-                            {s.file_type === 'xlsx' && (
-                              <button
-                                onClick={() => handleImportPo(s.file_name)}
-                                disabled={importingPo || !s.exists}
-                                style={{
-                                  padding: '0.3rem 0.6rem',
-                                  fontSize: '0.75rem',
-                                  background: s.exists ? 'var(--secondary-gradient)' : 'rgba(255,255,255,0.05)',
-                                  border: 'none',
-                                  color: s.exists ? '#fff' : 'var(--text-muted)',
-                                  borderRadius: '4px',
-                                  cursor: s.exists ? 'pointer' : 'not-allowed',
-                                  width: 'fit-content'
-                                }}
-                              >
-                                {importingPo ? '임포트 중...' : 'DB 임포트 실행'}
-                              </button>
-                            )}
-                            {(s.intended_use === 'golden_dataset' || s.file_name.includes('262603000301')) && (s.file_type === 'dwg' || s.file_type === 'xlsx') && (
-                              <button
-                                onClick={() => handleEvaluateGolden(s.linked_purchase_order_file || s.file_name)}
-                                disabled={evaluating || !s.exists}
-                                style={{
-                                  padding: '0.3rem 0.6rem',
-                                  fontSize: '0.75rem',
-                                  background: s.exists ? 'var(--primary-gradient)' : 'rgba(255,255,255,0.05)',
-                                  border: 'none',
-                                  color: s.exists ? '#fff' : 'var(--text-muted)',
-                                  borderRadius: '4px',
-                                  cursor: s.exists ? 'pointer' : 'not-allowed',
-                                  width: 'fit-content'
-                                }}
-                              >
-                                {evaluating ? '평가 중...' : '골든 데이터 평가 실행'}
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {importResult && (
-                    <div style={{ background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.3)', color: '#10b981', padding: '0.75rem', borderRadius: '6px', marginTop: '0.5rem' }}>
-                      <strong>임포트 성공!</strong>
-                      <div style={{ marginTop: '0.2rem' }}>현장: {importResult.project}</div>
-                      <div>P/O: {importResult.po_number}</div>
-                      <div>세대 타입: {importResult.apartment_types}종</div>
-                      <div>BOM 품목: {importResult.bom_items}개</div>
-                    </div>
-                  )}
-
-                  {evaluationResult && (
-                    <div style={{ background: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.3)', color: '#60a5fa', padding: '0.75rem', borderRadius: '6px', marginTop: '0.5rem' }}>
-                      <strong style={{ color: '#fff', display: 'block', marginBottom: '0.4rem' }}>📊 골든 데이터셋 평가 결과</strong>
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.4rem', marginBottom: '0.5rem' }}>
-                        <div>정밀도(Precision): <span style={{ fontWeight: 600, color: '#fff' }}>{evaluationResult.summary.precision}%</span></div>
-                        <div>재현율(Recall): <span style={{ fontWeight: 600, color: '#fff' }}>{evaluationResult.summary.recall}%</span></div>
-                        <div style={{ gridColumn: 'span 2' }}>F1-Score: <span style={{ fontWeight: 600, color: '#34d399' }}>{evaluationResult.summary.f1_score}%</span></div>
-                      </div>
-                      <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '0.4rem', fontSize: '0.75rem', color: 'var(--text-muted)', display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
-                        <div>매칭/골든 전체: {evaluationResult.summary.matched_items} / {evaluationResult.summary.total_expected_items}개</div>
-                        <div>누락/과검출: {evaluationResult.summary.missing_items_count} / {evaluationResult.summary.over_detected_items_count}개</div>
-                        <div>치수 일치율: {evaluationResult.summary.dimension_match_rate}%</div>
-                        <div>수량 오차율: {evaluationResult.summary.quantity_error_rate}%</div>
-                        <div>금액 오차율: {evaluationResult.summary.amount_error_rate}%</div>
-                        {evaluationResult.summary.ambiguous_actual_count > 0 && (
-                          <div style={{ color: '#fbbf24', marginTop: '0.2rem', fontWeight: 500 }}>
-                            ⚠️ 모호한 항목 (타입 없음) {evaluationResult.summary.ambiguous_actual_count}개 발견
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
             </div>
           )}
 
