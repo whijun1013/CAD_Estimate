@@ -28,6 +28,8 @@ import {
   Database
 } from 'lucide-react';
 import { apiClient } from './apiClient';
+import AIStatusBar from './components/AIStatusBar';
+import WorkflowSidebar from './components/WorkflowSidebar';
 
 const DistributionChart = lazy(() => import('./components/DistributionChart'));
 
@@ -199,12 +201,17 @@ function App() {
     try {
       await apiClient.updateAiProvider({
         provider: 'openai',
-        api_key: openAiKeyInput
+        api_key: openAiKeyInput,
+        model: config?.model || 'gpt-5.6'
       });
-      showToast('OpenAI 설정이 업데이트되었습니다. 이제 실제 AI 분석이 활성화됩니다.');
+      showToast('OpenAI 연결 완료. 새 도면부터 실제 AI 분석이 적용됩니다.');
       setOpenAiKeyInput('');
-      const newConfig = await apiClient.getConfig();
+      const [newConfig, newHealth] = await Promise.all([
+        apiClient.getConfig(),
+        apiClient.getHealth()
+      ]);
       setConfig(newConfig);
+      setHealthData(newHealth);
     } catch (err) {
       showToast('OpenAI 설정 업데이트에 실패했습니다: ' + err.message, 'error');
     } finally {
@@ -756,8 +763,8 @@ function App() {
         <div className="brand">
           <div className="brand-logo">C</div>
           <div>
-            <h1 className="brand-name">Smart Purchase Order Analysis</h1>
-            <span className="dimmed-text">건설 가구 도면 발주 내역서 검증 엔진</span>
+            <h1 className="brand-name">현장 발주 AI</h1>
+            <span className="dimmed-text">도면 분석부터 견적 확정까지 한 번에</span>
           </div>
         </div>
 
@@ -777,44 +784,12 @@ function App() {
         </div>
       </header>
 
-      {/* Dynamic Provider Mode Banner */}
-      {healthData && healthData.provider_mode && (
-        <div style={{
-          padding: '0.6rem 1.25rem',
-          background: isStubMode ? 'linear-gradient(90deg, rgba(245, 158, 11, 0.12) 0%, rgba(245, 158, 11, 0.03) 100%)' : 'linear-gradient(90deg, rgba(16, 185, 129, 0.12) 0%, rgba(16, 185, 129, 0.03) 100%)',
-          borderBottom: '1px solid var(--border-color)',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          flexWrap: 'wrap',
-          gap: '1rem',
-          fontSize: '0.82rem',
-          color: isStubMode ? '#fbbf24' : '#34d399',
-          borderRadius: '8px',
-          marginBottom: '1rem',
-          border: isStubMode ? '1px solid rgba(245, 158, 11, 0.25)' : '1px solid rgba(16, 185, 129, 0.25)'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <Cpu size={16} />
-            <span>
-              {isStubMode ? (
-                <strong>⚠️ 데모/시뮬레이션 분석 모드 활성화 중</strong>
-              ) : (
-                <strong>✓ 실 운영 환경 (Production AI Engine) 활성화 중</strong>
-              )}
-            </span>
-            <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem', marginLeft: '0.25rem' }}>
-              ({isStubMode ? '일부 도면 판독 결과가 시뮬레이션 데이터로 대체됩니다.' : '실제 도면 벡터 파싱 및 Vision 모델 분석이 실행됩니다.'})
-            </span>
-          </div>
-          <div style={{ display: 'flex', gap: '0.75rem', fontSize: '0.75rem' }}>
-            <span style={{ opacity: 0.8 }}>도면 변환: <strong>{healthData.provider_mode.drawing_converter}</strong></span>
-            <span style={{ opacity: 0.8 }}>벡터 추출: <strong>{healthData.provider_mode.vector_extractor}</strong></span>
-            <span style={{ opacity: 0.8 }}>비전 분석: <strong>{healthData.provider_mode.vision_analyzer}</strong></span>
-            <span style={{ opacity: 0.8 }}>모의 허용: <strong>{healthData.provider_mode.allow_mock_provider}</strong></span>
-          </div>
-        </div>
-      )}
+      <AIStatusBar
+        isStubMode={isStubMode}
+        config={config}
+        healthData={healthData}
+        onOpenSettings={() => setCurrentPage('developer-tools')}
+      />
 
       {/* Global Error Banner */}
       {errorMessage && (
@@ -826,129 +801,29 @@ function App() {
       {/* 2. Main Grid Layout */}
       <div className="dashboard-grid">
 
-        {/* Left Sidebar */}
-        <aside className="sidebar">
-          {/* Navigation menu */}
-          <div className="glass-card">
-            <h2 className="card-title">
-              <Sliders size={16} /> 서비스 메뉴
-            </h2>
-            <div className="type-list">
-              <button
-                id="menu-btn-dashboard"
-                className={`type-item ${currentPage === 'dashboard' ? 'active' : ''}`}
-                onClick={() => setCurrentPage('dashboard')}
-              >
-                <span className="type-name" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <Activity size={16} /> 대시보드
-                </span>
-              </button>
-              <button
-                id="menu-btn-project-po"
-                className={`type-item ${currentPage === 'project-po' ? 'active' : ''}`}
-                onClick={() => setCurrentPage('project-po')}
-              >
-                <span className="type-name" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <Briefcase size={16} /> 1. 발주서 등록
-                </span>
-              </button>
-              <button
-                id="menu-btn-cad-upload"
-                className={`type-item ${currentPage === 'cad-upload' ? 'active' : ''}`}
-                onClick={() => setCurrentPage('cad-upload')}
-              >
-                <span className="type-name" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <UploadCloud size={16} /> 2. 도면 분석
-                </span>
-              </button>
-              <button
-                id="menu-btn-ai-review"
-                className={`type-item ${currentPage === 'ai-review' ? 'active' : ''}`}
-                onClick={() => { setCurrentPage('ai-review'); fetchScheduleData(); }}
-              >
-                <span className="type-name" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'space-between', width: '100%' }}>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <CheckCircle2 size={16} /> 3. 필요 가구 확인
-                  </span>
-                  {scheduleSummary.review_required_count > 0 && (
-                    <span className="badge pink" style={{ fontSize: '0.7rem', padding: '0.1rem 0.35rem', borderRadius: '4px' }}>
-                      {scheduleSummary.review_required_count}
-                    </span>
-                  )}
-                </span>
-              </button>
-              <button
-                id="menu-btn-furniture-schedule"
-                className={`type-item ${currentPage === 'furniture-schedule' ? 'active' : ''}`}
-                onClick={() => setCurrentPage('furniture-schedule')}
-              >
-                <span className="type-name" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <ClipboardList size={16} /> 4. 가구 산출표
-                </span>
-              </button>
-              <button
-                id="menu-btn-quotation"
-                className={`type-item ${currentPage === 'quotation' ? 'active' : ''}`}
-                onClick={() => setCurrentPage('quotation')}
-              >
-                <span className="type-name" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <FileText size={16} /> 5. 견적서 작성
-                </span>
-              </button>
-              <button
-                id="menu-btn-developer-tools"
-                className={`type-item ${currentPage === 'developer-tools' ? 'active' : ''}`}
-                onClick={() => setCurrentPage('developer-tools')}
-              >
-                <span className="type-name" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <Sliders size={16} /> 설정/진단
-                </span>
-              </button>
-            </div>
-          </div>
-
-          {/* Project Details */}
-          {project && (
-            <div className="glass-card">
-              <h2 className="card-title">
-                <Briefcase size={16} /> 현장 선택
-              </h2>
-              <select
-                className="custom-select"
-                style={{ width: '100%', marginBottom: 0 }}
-                value={project.id}
-                onChange={(e) => {
-                  const p = projects.find(proj => proj.id === parseInt(e.target.value));
-                  if (p) setProject(p);
-                }}
-              >
-                {projects.map(p => (
-                  <option key={p.id} value={p.id}>{p.name}</option>
-                ))}
-              </select>
-            </div>
-          )}
-
-          {/* Apartment Types List */}
-          <div className="glass-card">
-            <h2 className="card-title">
-              <Layers size={16} /> 평형 타입 선택 ({aptTypes.length})
-            </h2>
-            <div className="type-list">
-              {aptTypes.map(t => (
-                <div
-                  key={t.id}
-                  id={`apt-type-selector-${t.type_name}`}
-                  className={`type-item ${selectedType?.id === t.id ? 'active' : ''}`}
-                  onClick={() => { setSelectedType(t); setBomPage(1); }}
-                >
-                  <span className="type-name">{t.type_name} 타입</span>
-                  <span className="type-qty">{t.household_count}세대</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </aside>
+        <WorkflowSidebar
+          currentPage={currentPage}
+          onNavigate={(page) => {
+            setCurrentPage(page);
+            if (page === 'ai-review') fetchScheduleData();
+          }}
+          reviewCount={scheduleSummary.review_required_count}
+          project={project}
+          projects={projects}
+          onProjectChange={(projectId) => {
+            const nextProject = projects.find((item) => item.id === projectId);
+            if (nextProject) setProject(nextProject);
+          }}
+          apartmentTypes={aptTypes}
+          selectedType={selectedType}
+          onTypeChange={(typeId) => {
+            const nextType = aptTypes.find((item) => item.id === typeId);
+            if (nextType) {
+              setSelectedType(nextType);
+              setBomPage(1);
+            }
+          }}
+        />
 
         {/* Right Main Content */}
         <main className="main-panel">
@@ -3549,7 +3424,7 @@ function App() {
           {/* ======================================================== */}
           {currentPage === 'developer-tools' && (
             <div className="tab-content" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-              <div className="glass-card">
+              <div className="glass-card diagnostics-card">
                 <h2 className="card-title">
                   <Cpu size={16} /> AI 파이프라인 분석 엔진 프로바이더 상태
                 </h2>
@@ -3594,9 +3469,9 @@ function App() {
                 </div>
               </div>
 
-              <div className="glass-card">
+              <div className="glass-card access-key-card">
                 <h2 className="card-title">
-                  <Sliders size={16} /> API 키 설정
+                  <Sliders size={16} /> 앱 접근 보안 키
                 </h2>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '0.5rem 1rem' }}>
                   <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 600 }}>API KEY:</span>
@@ -3638,9 +3513,9 @@ function App() {
                   )}
                 </div>
               </div>
-              <div className="glass-card" style={{ marginTop: '1rem' }}>
+              <div className="glass-card ai-connection-card">
                 <h2 className="card-title">
-                  <Cpu size={16} /> AI 연동 상태 및 설정
+                  <Cpu size={16} /> OpenAI 연결
                 </h2>
 
                 <div style={{ marginBottom: '1rem', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '0.5rem' }}>
@@ -3656,9 +3531,9 @@ function App() {
                     <span style={{ color: 'var(--text-muted)', display: 'block', marginBottom: '0.2rem' }}>AI 검수(Review) 활성화</span>
                     <strong style={{ color: config?.real_ai_review_enabled ? '#10b981' : '#fbbf24' }}>{config?.real_ai_review_enabled ? '활성 (OpenAI)' : '비활성 (Stub)'}</strong>
                   </div>
-                  <div style={{ background: 'rgba(245,158,11,0.05)', padding: '0.5rem', borderRadius: '4px', border: '1px solid rgba(245,158,11,0.2)', fontSize: '0.75rem' }}>
-                    <span style={{ color: '#d97706', display: 'block', marginBottom: '0.2rem', fontWeight: 600 }}>지원 포맷 제한 안내</span>
-                    <span style={{ color: 'var(--text-bright)' }}>JPG/PNG (O) / DXF벡터 (O) / PDF, DWG (제한적)</span>
+                  <div style={{ background: 'rgba(56,189,248,0.05)', padding: '0.5rem', borderRadius: '4px', border: '1px solid rgba(56,189,248,0.2)', fontSize: '0.75rem' }}>
+                    <span style={{ color: '#38bdf8', display: 'block', marginBottom: '0.2rem', fontWeight: 600 }}>분석 모델</span>
+                    <span style={{ color: 'var(--text-bright)' }}>{config?.model || 'gpt-5.6'}</span>
                   </div>
                 </div>
 

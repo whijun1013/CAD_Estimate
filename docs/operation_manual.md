@@ -9,7 +9,7 @@ CAD_Estimate는 건설/인테리어 발주서를 자동으로 관리하고, 도�
    ALLOWED_ORIGINS=http://localhost:5173
    VISION_ANALYZER_PROVIDER=openai
    OPENAI_API_KEY=your_openai_api_key_here
-   OPENAI_MODEL=gpt-4o
+   OPENAI_MODEL=gpt-5.6
    ```
 2. **백엔드 실행**:
    ```bash

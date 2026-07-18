@@ -462,27 +462,32 @@ class OpenAIVisionAnalyzer(BaseVisionAnalyzer):
         try:
             base64_image = self._encode_image(task.file_path)
 
-            response = self.client.beta.chat.completions.parse(
+            response = self.client.responses.parse(
                 model=self.model,
-                messages=[
+                input=[
                     {
                         "role": "user",
                         "content": [
-                            {"type": "text", "text": "Analyze this architectural or furniture layout drawing. Identify the furniture items, dimensions, and locations."},
                             {
-                                "type": "image_url",
-                                "image_url": {
-                                    "url": f"data:image/{ext};base64,{base64_image}"
-                                }
+                                "type": "input_text",
+                                "text": (
+                                    "Analyze this architectural or furniture layout drawing. "
+                                    "Identify only furniture supported by visible drawing evidence. "
+                                    "Extract dimensions in millimeters, quantity, location, and evidence. "
+                                    "Mark uncertain or inferred values as needs_review and explain why."
+                                ),
+                            },
+                            {
+                                "type": "input_image",
+                                "image_url": f"data:image/{ext};base64,{base64_image}",
                             }
                         ]
                     }
                 ],
-                response_format=VisionAnalysisResponseSchema,
-                temperature=0.0
+                text_format=VisionAnalysisResponseSchema,
             )
 
-            result = response.choices[0].message.parsed
+            result = response.output_parsed
 
             # Map Pydantic models to dicts
             vision_data = []
@@ -1709,16 +1714,22 @@ class OpenAIAIReviewEngine(BaseAIReviewEngine):
                 "Items:\n" + json.dumps(items, ensure_ascii=False, indent=2)
             )
 
-            response = self.client.beta.chat.completions.parse(
+            response = self.client.responses.parse(
                 model=self.model,
-                messages=[
-                    {"role": "user", "content": prompt}
+                input=[
+                    {
+                        "role": "system",
+                        "content": (
+                            "Review extracted construction furniture data conservatively. "
+                            "Never approve an item when required dimensions or evidence are missing."
+                        ),
+                    },
+                    {"role": "user", "content": prompt},
                 ],
-                response_format=AIReviewResponseSchema,
-                temperature=0.0
+                text_format=AIReviewResponseSchema,
             )
 
-            result = response.choices[0].message.parsed
+            result = response.output_parsed
 
             # Map review results back to structured_analysis items
             # Create a lookup by original_item_name

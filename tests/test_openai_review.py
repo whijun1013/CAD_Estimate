@@ -1,5 +1,8 @@
+import os
+
 import pytest
 from unittest.mock import MagicMock
+from types import SimpleNamespace
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -7,7 +10,10 @@ from sqlalchemy.pool import StaticPool
 
 import models
 from database import Base
-from pipeline import OpenAIAIReviewEngine, StubEstimateMapper, get_ai_review_engine
+from fastapi import HTTPException
+
+from main import AIProviderSettings, update_ai_provider
+from pipeline import OpenAIAIReviewEngine, OpenAIVisionAnalyzer, StubEstimateMapper, get_ai_review_engine
 
 @pytest.fixture
 def db_session():
@@ -32,10 +38,9 @@ def test_openai_review_engine_success():
     # Mock the client
     mock_parse = MagicMock()
 
-    class MockMessage:
+    class MockParsed:
         def __init__(self):
-            self.parsed = MagicMock()
-            self.parsed.reviewed_items = [
+            self.reviewed_items = [
                 MagicMock(
                     original_item_name="Upper cabinet",
                     ai_review_status="approved",
@@ -51,18 +56,14 @@ def test_openai_review_engine_success():
                     review_flags=["dimension_mismatch"]
                 )
             ]
-            self.parsed.global_review_summary = "Review completed."
-
-    class MockChoice:
-        def __init__(self):
-            self.message = MockMessage()
+            self.global_review_summary = "Review completed."
 
     class MockResponse:
         def __init__(self):
-            self.choices = [MockChoice()]
+            self.output_parsed = MockParsed()
 
     mock_parse.return_value = MockResponse()
-    engine.client.beta.chat.completions.parse = mock_parse
+    engine.client.responses.parse = mock_parse
 
     task = models.CADTask(id=1, project_id=1)
     structured_analysis = {
@@ -85,7 +86,7 @@ def test_openai_review_engine_failure():
     engine = OpenAIAIReviewEngine("fake_key", "gpt-4o")
 
     mock_parse = MagicMock(side_effect=Exception("API Error"))
-    engine.client.beta.chat.completions.parse = mock_parse
+    engine.client.responses.parse = mock_parse
 
     task = models.CADTask(id=1, project_id=1)
     structured_analysis = {"items": [{"item_no": 1, "product_name": "Upper cabinet", "quantity": 1}], "readiness_summary": {}}
@@ -95,6 +96,56 @@ def test_openai_review_engine_failure():
     assert log["status"] == "FAILED"
     assert "API Error" in log["log"]
     assert "AI Review Error: API Error" in result["readiness_summary"]["blocking_issues"]
+
+
+def test_openai_vision_engine_uses_responses_api(tmp_path):
+    image_path = tmp_path / "drawing.png"
+    image_path.write_bytes(b"fake-image")
+
+    detected_item = MagicMock()
+    detected_item.model_dump.return_value = {"product_name": "Upper cabinet", "quantity": 1}
+    parsed = SimpleNamespace(detected_items=[detected_item], overall_confidence=0.91)
+    response = SimpleNamespace(output_parsed=parsed)
+
+    engine = OpenAIVisionAnalyzer("fake_key", "gpt-5.6")
+    engine.client.responses.parse = MagicMock(return_value=response)
+
+    result, log = engine.analyze(SimpleNamespace(file_path=str(image_path)))
+
+    assert result == [{"product_name": "Upper cabinet", "quantity": 1}]
+    assert log["status"] == "COMPLETED"
+    request = engine.client.responses.parse.call_args.kwargs
+    assert request["text_format"].__name__ == "VisionAnalysisResponseSchema"
+    assert request["input"][0]["content"][1]["type"] == "input_image"
+
+
+def test_update_ai_provider_enables_vision_and_review(monkeypatch):
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    monkeypatch.delenv("OPENAI_MODEL", raising=False)
+    monkeypatch.setenv("ALLOW_MOCK_PROVIDER", "true")
+    monkeypatch.setenv("VISION_ANALYZER_PROVIDER", "stub")
+    monkeypatch.setenv("AI_REVIEW_PROVIDER", "local")
+
+    result = update_ai_provider(
+        AIProviderSettings(provider="openai", api_key="test-key", model="gpt-5.6"),
+        True,
+    )
+
+    assert result["openai_configured"] is True
+    assert result["model"] == "gpt-5.6"
+    assert result["provider"] == "openai"
+    assert os.environ["VISION_ANALYZER_PROVIDER"] == "openai"
+    assert os.environ["AI_REVIEW_PROVIDER"] == "openai"
+    assert os.environ["ALLOW_MOCK_PROVIDER"] == "false"
+
+
+def test_update_ai_provider_rejects_missing_key(monkeypatch):
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+
+    with pytest.raises(HTTPException) as exc_info:
+        update_ai_provider(AIProviderSettings(provider="openai"), True)
+
+    assert exc_info.value.status_code == 422
 
 
 def test_estimate_mapper_needs_review_propagation(db_session):
