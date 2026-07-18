@@ -30,7 +30,7 @@
 * **동적 파일 분석 시뮬레이션(Stub)**: 업로드된 파일명 및 평형 마스터 정보(예: `84A`)에 따라 데이터베이스에 적합한 BOM 자재들을 실시간 바인딩하여 각각 다른 견적서를 연산해 줍니다.
 * **DWG/DXF 로컬 변환 제약 및 구현 범위**: 이번 작업 범위에서는 외부 유료 API나 상용 CAD SDK 없이 무료/로컬 구현 가능하도록, **DWG의 자동 변환/파싱 기능은 제외하고 DXF 업로드를 메인 입력으로 고정**합니다. DWG 업로드 시 변환을 중단하고 사용자에게 DXF로 변환 후 재업로드 하도록 명시적 오류 메시지를 반환합니다. DXF 파싱 시에는 도면의 치수, 텍스트, 레이어, 블록 정보를 기반으로 가구 후보를 산출하고, 누락된 치수는 AI 추론 로직을 통해 보완한 뒤 관리자가 검토/수정할 수 있도록 지원합니다.
 * **DWG/DXF 물리 파서 격리**: 서버 백엔드 리포지토리의 `pipeline.py` 내에 7대 핵심 단계가 명시적으로 구분되어 있으며, 실제 로컬 변환 및 API 처리가 어려운 단계는 **Stub Provider**로 격리되어 안전하게 동작합니다.
-* **실제 OpenAI 연동 모드 지원 (Responses API 기반)**: `.env`에 `OPENAI_API_KEY`를 등록하고 `VISION_ANALYZER_PROVIDER=openai`를 설정하면, Stub 모드를 벗어나 실제 OpenAI API(gpt-4o 모델 등)를 호출하여 도면(이미지) 비전 분석 및 AI 가구 산출, AI 자동 검수 로직이 구동됩니다. 이 과정에서 **OpenAI Responses API (Structured Outputs)** 를 엄격하게 사용하여 JSON 스키마 기반의 견고한 객체 반환을 보장합니다. 프론트엔드의 업로드 페이지에 현재 엔진 상태와 활성화 여부가 투명하게 표시됩니다.
+* **실제 OpenAI 연동 모드 지원 (Responses API 기반)**: 설정 화면에서 API 키를 연결하거나 `.env`에 `OPENAI_API_KEY`를 등록하고 `VISION_ANALYZER_PROVIDER=openai`를 설정하면, Stub 모드를 벗어나 실제 OpenAI 모델을 호출하여 도면(이미지) 비전 분석과 AI 자동 검수를 수행합니다. **OpenAI Responses API Structured Outputs**로 JSON 스키마에 맞는 결과를 받으며, 연결 상태는 화면 상단에서 바로 확인할 수 있습니다.
 * **포맷별 분석 지원 한계 (PDF/DWG)**: 현재 파일 업로드 시 JPG, PNG와 같은 이미지 형식과 순수 `ezdxf` 기반의 DXF 형식은 실제 분석 파이프라인(Vision 및 Vector 추출)을 통해 완벽히 지원됩니다. 그러나 복잡한 기하 변환이 필요한 PDF 및 DWG 원본 형식에 대해서는 실제 서버 파이프라인에서 추출하는 대신 **제한적 Fixture 우회(Stub) 로직**이 동작하도록 설정되어 있으므로, 실 환경 적용 전 PDF/DWG 파싱 모듈 추가 등 고도화가 요구됩니다.
 
 ---
@@ -67,7 +67,7 @@ AI_REVIEW_PROVIDER=local
 
 # OpenAI 설정 (openai provider 사용 시 필수)
 # OPENAI_API_KEY=your_openai_api_key
-OPENAI_MODEL=gpt-4o
+OPENAI_MODEL=gpt-5.6
 
 # Anthropic 설정 (anthropic provider 사용 시 필수)
 # ANTHROPIC_API_KEY=your_anthropic_api_key
@@ -76,6 +76,18 @@ ANTHROPIC_MODEL=claude-3-5-sonnet-20241022
 # Qwen Local 설정 (qwen_local provider 사용 시 필수)
 QWEN_LOCAL_ENDPOINT=http://localhost:11434/v1
 ```
+
+실서비스 배포 시에는 `.env`를 업로드하거나 커밋하지 말고, 배포 플랫폼의 Secret/환경변수 설정에 아래 값을 등록한 뒤 서비스를 재배포합니다.
+
+```env
+OPENAI_API_KEY=발급받은_비밀키
+OPENAI_MODEL=gpt-5.6
+VISION_ANALYZER_PROVIDER=openai
+AI_REVIEW_PROVIDER=openai
+ALLOW_MOCK_PROVIDER=false
+```
+
+설정 화면의 API 키 입력은 로컬 확인용이며 현재 백엔드 프로세스에만 적용됩니다. 운영 환경에서는 서버 환경변수를 사용해야 재시작 후에도 연결이 유지됩니다.
 
 ---
 

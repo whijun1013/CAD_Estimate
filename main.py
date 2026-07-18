@@ -7,7 +7,7 @@ import uuid
 import json
 import shutil
 import tempfile
-from typing import List, Optional, Dict, Any
+from typing import List, Optional, Dict, Any, Literal
 from fastapi import FastAPI, Depends, HTTPException, UploadFile, File, Form, BackgroundTasks, Security
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
@@ -465,13 +465,16 @@ def get_config():
         if ai_review_override
         else ("openai" if provider == "openai" else "local")
     )
-    openai_configured = bool(os.getenv("OPENAI_API_KEY")) and bool(os.getenv("OPENAI_MODEL"))
+    openai_key = os.getenv("OPENAI_API_KEY", "").strip()
+    openai_model = os.getenv("OPENAI_MODEL", "").strip()
+    openai_configured = bool(openai_key and openai_model and openai_key != "your_openai_api_key_here")
 
     return {
         "surcharge_rate": float(os.getenv("SURCHARGE_RATE", "0.30")),
         "vat_rate": float(os.getenv("DEFAULT_VAT_RATE", "0.10")),
         "categories": ["상부장", "하부장", "키큰장", "피라/앤드판넬", "코니스/걸레받이", "보조주방", "기타"],
         "provider": provider,
+        "model": openai_model or None,
         "ai_review_provider": ai_review_provider,
         "openai_configured": openai_configured,
         "real_ai_review_enabled": ai_review_provider == "openai" and openai_configured
@@ -1166,19 +1169,49 @@ def get_stats(project_id: Optional[int] = None, po_number: Optional[str] = None,
 
 
 class AIProviderSettings(BaseModel):
-    provider: str
+    provider: Literal["stub", "openai", "anthropic", "qwen_local"]
     api_key: Optional[str] = None
     model: Optional[str] = None
 
+    @field_validator("api_key", "model")
+    @classmethod
+    def normalize_optional_text(cls, value: Optional[str]) -> Optional[str]:
+        if value is None:
+            return None
+        normalized = value.strip()
+        return normalized or None
+
 @app.post("/api/settings/ai-provider")
 def update_ai_provider(settings: AIProviderSettings, _ = Depends(verify_api_key)):
-    os.environ["VISION_ANALYZER_PROVIDER"] = settings.provider
-    if settings.api_key:
-        os.environ["OPENAI_API_KEY"] = settings.api_key
-    if settings.model:
-        os.environ["OPENAI_MODEL"] = settings.model
+    if settings.provider == "openai":
+        api_key = settings.api_key or os.getenv("OPENAI_API_KEY", "").strip()
+        model = settings.model or os.getenv("OPENAI_MODEL", "").strip() or "gpt-5.6"
+        if not api_key or api_key == "your_openai_api_key_here":
+            raise HTTPException(status_code=422, detail="OpenAI API 키를 입력해 주세요.")
 
-    return {"message": "AI provider settings updated successfully"}
+        os.environ["OPENAI_API_KEY"] = api_key
+        os.environ["OPENAI_MODEL"] = model
+        os.environ["VISION_ANALYZER_PROVIDER"] = "openai"
+        os.environ["AI_REVIEW_PROVIDER"] = "openai"
+        os.environ["ALLOW_MOCK_PROVIDER"] = "false"
+
+        return {
+            "message": "OpenAI vision and review providers are ready",
+            "provider": "openai",
+            "model": model,
+            "openai_configured": True,
+        }
+
+    os.environ["VISION_ANALYZER_PROVIDER"] = settings.provider
+    if settings.provider == "stub":
+        os.environ["AI_REVIEW_PROVIDER"] = "local"
+
+    return {
+        "message": "AI provider settings updated successfully",
+        "provider": settings.provider,
+        "model": settings.model,
+        "openai_configured": False,
+    }
 
 # --- actual upload & status tracking flow ---
 

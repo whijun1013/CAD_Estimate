@@ -9,8 +9,9 @@ CAD_Estimate는 건설/인테리어 발주서를 자동으로 관리하고, 도�
    ALLOWED_ORIGINS=http://localhost:5173
    VISION_ANALYZER_PROVIDER=openai
    OPENAI_API_KEY=your_openai_api_key_here
-   OPENAI_MODEL=gpt-4o
+   OPENAI_MODEL=gpt-5.6
    ```
+   운영 배포에서는 `.env`를 저장소에 올리지 않고 배포 플랫폼의 Secret/환경변수에 `OPENAI_API_KEY`, `OPENAI_MODEL=gpt-5.6`, `VISION_ANALYZER_PROVIDER=openai`, `AI_REVIEW_PROVIDER=openai`, `ALLOW_MOCK_PROVIDER=false`를 등록한 뒤 재배포합니다. 설정 화면에서 입력한 키는 현재 백엔드 프로세스에만 유지됩니다.
 2. **백엔드 실행**:
    ```bash
    pip install -r requirements.txt
